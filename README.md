@@ -46,7 +46,7 @@ func main() {
             "replicas": {
                 Type: v.TypeInt,
                 Validators: []v.ValueValidator{
-                    valv.RangeValidator{Min: v.PtrFloat(1), Max: v.PtrFloat(100)},
+                    valv.RangeValidator{Min: v.Ptr[float64](1), Max: v.Ptr[float64](100)},
                 },
             },
         },
@@ -138,13 +138,13 @@ RegexValidator{
 }
 
 // Numeric range
-RangeValidator{Min: v.PtrFloat(1), Max: v.PtrFloat(100)}
+RangeValidator{Min: v.Ptr[float64](1), Max: v.Ptr[float64](100)}
 
 // Non-empty check
 NonEmptyValidator{}
 
 // Length validation
-LengthValidator{Min: v.PtrInt(1), Max: v.PtrInt(255)}
+LengthValidator{Min: v.Ptr[int](1), Max: v.Ptr[int](255)}
 
 // URL validation
 URLValidator{RequireScheme: true, AllowedSchemes: []string{"http", "https"}}
@@ -163,7 +163,7 @@ RegexKeyValidator{
 ForbiddenKeyValidator{Forbidden: []string{"password", "secret"}}
 
 // Key length
-LengthKeyValidator{Min: v.PtrInt(1), Max: v.PtrInt(63)}
+LengthKeyValidator{Min: v.Ptr[int](1), Max: v.Ptr[int](63)}
 ```
 
 ## Inter-field Logic
@@ -212,6 +212,40 @@ result := validator.ValidateWithOptions(yaml, ValidationContext{
     YAML11Booleans: false, // Don't treat YAML 1.1 boolean literals (yes/no/on/off/true/false/y/n) as booleans; when true, quoted forms are also treated as booleans
 })
 ```
+
+## CLI
+
+The repository ships a small CLI to validate any YAML file using a schema described in YAML or JSON (a serialized `FieldSchema`). Provide the schema file with `-schema` and the YAML to validate with `-file` (or stdin).
+
+Minimal schema example (`/tmp/schema.yaml`):
+
+```yaml
+type: map
+required: true
+unknownKeyPolicy: warn
+allowedKeys:
+  name:
+    type: string
+    required: true
+  replicas:
+    type: int
+    validators:
+      - name: range
+        min: 1
+        max: 10
+```
+
+Validate a file:
+
+```bash
+go run ./cmd/yamlvalidator \
+  -schema /tmp/schema.yaml \
+  -file ./path/to/config.yaml \
+  -strict-keys \
+  -yaml11-bools
+```
+
+Flags: `-schema` (required), `-file` (defaults to stdin), `-strict-keys`, `-stop-on-first`, `-strict-types`, `-yaml11-bools`, and `-sort`.
 
 ## Error Handling
 
@@ -344,8 +378,8 @@ timeout: {
 ### 4. Use helper functions for pointers
 
 ```go
-MinItems: PtrInt(1)
-Max:      PtrFloat(100)
+MinItems: Ptr[int](1)
+Max:      Ptr[float64](100)
 ```
 
 ## API Reference
